@@ -11,10 +11,10 @@ local function create_win(width, height, row, col, title)
 		height = height,
 		row = row,
 		col = col,
-		border = "single",
+		border = "rounded",
 	})
 	api.nvim_buf_set_option(buf, "modifiable", true)
-	api.nvim_buf_set_lines(buf, 0, -1, false, { title, string.rep("─", width - 2) })
+	api.nvim_buf_set_lines(buf, 0, -1, false, { " " .. title, string.rep("─", width - 2) })
 	api.nvim_buf_set_option(buf, "modifiable", false)
 	return buf, win
 end
@@ -38,7 +38,7 @@ function M.create_dashboard()
 
 	local branches_buf, branches_win = create_win(half_width, half_height - 1, 1, 0, "Branches")
 	local commits_buf, commits_win = create_win(half_width, half_height, half_height, 0, "Commits")
-	local files_buf, files_win = create_win(half_width, half_height - 1, 1, half_width, "Files")
+	local status_buf, status_win = create_win(half_width, half_height - 1, 1, half_width, "Status")
 	local diff_buf, diff_win = create_win(half_width, half_height, half_height, half_width, "Diff")
 
 	-- Store buffers and windows for later use
@@ -47,13 +47,14 @@ function M.create_dashboard()
 		branches = branches_buf,
 		commits = commits_buf,
 		files = files_buf,
+		status = status_buf,
 		diff = diff_buf,
 	}
 	M.windows = {
 		main = main_win,
 		branches = branches_win,
 		commits = commits_win,
-		files = files_win,
+		status = status_win,
 		diff = diff_win,
 	}
 
@@ -63,6 +64,7 @@ function M.create_dashboard()
 	end
 
 	set_global_keymap("q", ':lua require("graphite.ui.dashboard").close_dashboard()<CR>')
+	set_global_keymap("r", ':lua require("graphite.ui.dashboard").refresh_dashboard()<CR>')
 	set_global_keymap("<Tab>", ':lua require("graphite.ui.dashboard").next_window()<CR>')
 	set_global_keymap("<S-Tab>", ':lua require("graphite.ui.dashboard").prev_window()<CR>')
 
@@ -99,11 +101,25 @@ function M.setup_commit_keymaps(buf)
 end
 
 function M.setup_file_keymaps(buf)
-	-- Add file-related keymaps as needed
+	local function set_keymap(key, command)
+		api.nvim_buf_set_keymap(buf, "n", key, command, { noremap = true, silent = true })
+	end
+
+	set_keymap("o", ':lua require("graphite.commands.file").open()<CR>')
+	set_keymap("s", ':lua require("graphite.commands.file").stage()<CR>')
+	set_keymap("u", ':lua require("graphite.commands.file").unstage()<CR>')
+	set_keymap("d", ':lua require("graphite.commands.file").discard()<CR>')
+	-- Add more file-related keymaps as needed
 end
 
 function M.setup_diff_keymaps(buf)
-	-- Add diff-related keymaps as needed
+	local function set_keymap(key, command)
+		api.nvim_buf_set_keymap(buf, "n", key, command, { noremap = true, silent = true })
+	end
+
+	set_keymap("a", ':lua require("graphite.commands.diff").apply()<CR>')
+	set_keymap("r", ':lua require("graphite.commands.diff").reset()<CR>')
+	-- Add more diff-related keymaps as needed
 end
 
 function M.refresh_dashboard()
@@ -115,9 +131,9 @@ function M.refresh_dashboard()
 	local commits = M.get_commits()
 	set_buf_content(M.buffers.commits, commits)
 
-	-- Populate files
-	local files = M.get_files()
-	set_buf_content(M.buffers.files, files)
+	-- Populate status
+	local status = M.get_status()
+	set_buf_content(M.buffers.status, status)
 
 	-- Populate diff
 	local diff = M.get_diff()
@@ -161,7 +177,7 @@ function M.get_commits()
 	return utils.execute_command("log --limit 10")
 end
 
-function M.get_files()
+function M.get_status()
 	return utils.execute_command("status")
 end
 
