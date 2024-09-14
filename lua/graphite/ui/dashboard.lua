@@ -37,12 +37,13 @@ function M.create_dashboard()
 	local half_width = math.floor(width / 2)
 	local half_height = math.floor(height / 2)
 
-	local branches_buf, branches_win = create_win(half_width, half_height - 1, 1, 0, "Branches", main_win)
-	local commits_buf, commits_win = create_win(half_width, half_height, half_height, 0, "Commits", main_win)
-	local status_buf, status_win = create_win(half_width, half_height - 1, 1, half_width, "Status", main_win)
-	local diff_buf, diff_win = create_win(half_width, half_height, half_height, half_width, "Diff", main_win)
-	local files_buf, files_win = create_win(half_width, half_height, half_height, half_width, "Files", main_win)
-	local files_buf, files_win = create_win(half_width, half_height, half_height, half_width, "Files")
+	local branches_buf, branches_win =
+		create_win(half_width, half_height - 1, 1, width - half_width, "Branches", main_win)
+	local commits_buf, commits_win =
+		create_win(half_width, half_height, half_height, width - half_width, "Commits", main_win)
+	local status_buf, status_win = create_win(half_width, half_height - 1, 1, width - half_width, "Status", main_win)
+	local diff_buf, diff_win = create_win(half_width, half_height, half_height, width - half_width, "Diff", main_win)
+	-- Remove the duplicate line for files_buf and files_win creation
 	-- Store buffers and windows for later use
 	M.buffers = {
 		main = main_buf,
@@ -58,8 +59,8 @@ function M.create_dashboard()
 		commits = commits_win,
 		status = status_win,
 		diff = diff_win,
+		files = files_win, -- Add files_win to the windows tables
 	}
-
 	-- Set up global keymaps
 	local function set_global_keymap(key, command)
 		api.nvim_set_keymap("n", key, command, { noremap = true, silent = true })
@@ -140,6 +141,10 @@ function M.refresh_dashboard()
 	-- Populate diff
 	local diff = M.get_diff()
 	set_buf_content(M.buffers.diff, diff)
+
+	-- Populate files
+	local files = M.get_files()
+	set_buf_content(M.buffers.files, files)
 end
 
 function M.close_dashboard()
@@ -185,6 +190,10 @@ end
 
 function M.get_diff()
 	return utils.execute_command("diff") or {}
+end
+
+function M.get_files()
+	return utils.execute_command("ls-files") or {}
 end
 
 return M
