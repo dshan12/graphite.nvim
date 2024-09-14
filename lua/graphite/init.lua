@@ -23,7 +23,9 @@ function M.setup(opts)
 	local user = require("graphite.commands.user")
 
 	-- Create user commands
-	vim.api.nvim_create_user_command("GraphiteDashboard", M.open_dashboard, {})
+	vim.api.nvim_create_user_command("GraphiteDashboard", function()
+		require("graphite.ui.dashboard").create_dashboard()
+	end, {})
 	vim.api.nvim_create_user_command("GraphiteAuth", function(opts)
 		auth.auth(opts.fargs)
 	end, { nargs = "*" })

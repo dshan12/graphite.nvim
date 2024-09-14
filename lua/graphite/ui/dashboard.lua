@@ -1,7 +1,7 @@
 local api = vim.api
+local utils = require("graphite.utils")
 local M = {}
 
--- Helper function to create a new window
 local function create_win(width, height, row, col, title)
 	local buf = api.nvim_create_buf(false, true)
 	local win = api.nvim_open_win(buf, false, {
@@ -19,7 +19,6 @@ local function create_win(width, height, row, col, title)
 	return buf, win
 end
 
--- Helper function to set content in a buffer
 local function set_buf_content(buf, content)
 	api.nvim_buf_set_option(buf, "modifiable", true)
 	api.nvim_buf_set_lines(buf, 2, -1, false, content)
@@ -31,7 +30,7 @@ function M.create_dashboard()
 	local height = api.nvim_get_option("lines")
 
 	-- Create main container
-	local main_buf, main_win = create_win(width, height, 0, 0, "Graphite")
+	local main_buf, main_win = create_win(width, height, 0, 0, "Graphite Dashboard")
 
 	-- Create sub-windows
 	local half_width = math.floor(width / 2)
@@ -100,18 +99,10 @@ function M.setup_commit_keymaps(buf)
 end
 
 function M.setup_file_keymaps(buf)
-	local function set_keymap(key, command)
-		api.nvim_buf_set_keymap(buf, "n", key, command, { noremap = true, silent = true })
-	end
-
 	-- Add file-related keymaps as needed
 end
 
 function M.setup_diff_keymaps(buf)
-	local function set_keymap(key, command)
-		api.nvim_buf_set_keymap(buf, "n", key, command, { noremap = true, silent = true })
-	end
-
 	-- Add diff-related keymaps as needed
 end
 
@@ -163,23 +154,19 @@ end
 
 -- Helper functions to get data from Graphite
 function M.get_branches()
-	local output = vim.fn.system(vim.g.graphite_executable .. " branch list")
-	return vim.split(output, "\n")
+	return utils.execute_command("branch list")
 end
 
 function M.get_commits()
-	local output = vim.fn.system(vim.g.graphite_executable .. " log --limit 10")
-	return vim.split(output, "\n")
+	return utils.execute_command("log --limit 10")
 end
 
 function M.get_files()
-	local output = vim.fn.system(vim.g.graphite_executable .. " status")
-	return vim.split(output, "\n")
+	return utils.execute_command("status")
 end
 
 function M.get_diff()
-	local output = vim.fn.system(vim.g.graphite_executable .. " diff")
-	return vim.split(output, "\n")
+	return utils.execute_command("diff")
 end
 
 return M
