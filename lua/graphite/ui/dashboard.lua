@@ -40,7 +40,7 @@ function M.create_dashboard()
 	local commits_buf, commits_win = create_win(half_width, half_height, half_height, 0, "Commits")
 	local status_buf, status_win = create_win(half_width, half_height - 1, 1, half_width, "Status")
 	local diff_buf, diff_win = create_win(half_width, half_height, half_height, half_width, "Diff")
-
+	local files_buf, files_win = create_win(half_width, half_height, half_height, half_width, "Files")
 	-- Store buffers and windows for later use
 	M.buffers = {
 		main = main_buf,
