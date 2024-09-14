@@ -104,9 +104,7 @@ function M.setup_file_keymaps(buf)
 		api.nvim_buf_set_keymap(buf, "n", key, command, { noremap = true, silent = true })
 	end
 
-	set_keymap("a", ':lua require("graphite.commands.file").add()<CR>')
-	set_keymap("r", ':lua require("graphite.commands.file").reset()<CR>')
-	-- Add more file-related keymaps as needed
+	-- Add file-related keymaps as needed
 end
 
 function M.setup_diff_keymaps(buf)
@@ -114,9 +112,7 @@ function M.setup_diff_keymaps(buf)
 		api.nvim_buf_set_keymap(buf, "n", key, command, { noremap = true, silent = true })
 	end
 
-	set_keymap("s", ':lua require("graphite.commands.diff").stage_hunk()<CR>')
-	set_keymap("u", ':lua require("graphite.commands.diff").unstage_hunk()<CR>')
-	-- Add more diff-related keymaps as needed
+	-- Add diff-related keymaps as needed
 end
 
 function M.refresh_dashboard()
