@@ -2,11 +2,12 @@ local api = vim.api
 local utils = require("graphite.utils")
 local M = {}
 
-local function create_win(width, height, row, col, title)
+local function create_win(width, height, row, col, title, main_win)
 	local buf = api.nvim_create_buf(false, true)
 	local win = api.nvim_open_win(buf, false, {
 		style = "minimal",
-		relative = "editor",
+		relative = "win",
+		win = main_win,
 		width = width,
 		height = height,
 		row = row,
@@ -36,10 +37,11 @@ function M.create_dashboard()
 	local half_width = math.floor(width / 2)
 	local half_height = math.floor(height / 2)
 
-	local branches_buf, branches_win = create_win(half_width, half_height - 1, 1, 0, "Branches")
-	local commits_buf, commits_win = create_win(half_width, half_height, half_height, 0, "Commits")
-	local status_buf, status_win = create_win(half_width, half_height - 1, 1, half_width, "Status")
-	local diff_buf, diff_win = create_win(half_width, half_height, half_height, half_width, "Diff")
+	local branches_buf, branches_win = create_win(half_width, half_height - 1, 1, 0, "Branches", main_win)
+	local commits_buf, commits_win = create_win(half_width, half_height, half_height, 0, "Commits", main_win)
+	local status_buf, status_win = create_win(half_width, half_height - 1, 1, half_width, "Status", main_win)
+	local diff_buf, diff_win = create_win(half_width, half_height, half_height, half_width, "Diff", main_win)
+	local files_buf, files_win = create_win(half_width, half_height, half_height, half_width, "Files", main_win)
 	local files_buf, files_win = create_win(half_width, half_height, half_height, half_width, "Files")
 	-- Store buffers and windows for later use
 	M.buffers = {
