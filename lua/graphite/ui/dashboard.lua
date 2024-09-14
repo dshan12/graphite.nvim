@@ -22,40 +22,106 @@ function M.create_dashboard()
 
 	local win = api.nvim_open_win(buf, true, opts)
 
-	local content = {
-		"Graphite Dashboard",
-		"",
-		"Commands:",
-		" a - Auth",
-		" b - Branch operations",
-		" c - Commit operations",
-		" d - Downstack operations",
-		" l - Log",
-		" r - Repo operations",
-		" s - Stack operations",
-		" u - Upstack operations",
-		" q - Quit dashboard",
+	local function add_line(text)
+		api.nvim_buf_set_lines(buf, -1, -1, false, { text })
+	end
+
+	-- Clear buffer
+	api.nvim_buf_set_lines(buf, 0, -1, false, {})
+
+	-- Add ASCII art title
+	add_line(
+		"  ██████╗ ██████╗  █████╗ ██████╗ ██╗  ██╗██╗████████╗███████╗"
+	)
+	add_line(
+		" ██╔════╝ ██╔══██╗██╔══██╗██╔══██╗██║  ██║██║╚══██╔══╝██╔════╝"
+	)
+	add_line(
+		" ██║  ███╗██████╔╝███████║██████╔╝███████║██║   ██║   █████╗  "
+	)
+	add_line(
+		" ██║   ██║██╔══██╗██╔══██║██╔═══╝ ██╔══██║██║   ██║   ██╔══╝  "
+	)
+	add_line(
+		" ╚██████╔╝██║  ██║██║  ██║██║     ██║  ██║██║   ██║   ███████╗"
+	)
+	add_line(
+		"  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝╚═╝   ╚═╝   ╚══════╝"
+	)
+	add_line("")
+	add_line("Welcome to Graphite Dashboard")
+	add_line("")
+
+	-- Add command sections
+	local sections = {
+		{
+			title = "Branch Operations",
+			key = "b",
+			items = {
+				{ key = "c", desc = "Create branch" },
+				{ key = "h", desc = "Checkout branch" },
+				{ key = "i", desc = "Branch info" },
+				{ key = "d", desc = "Delete branch" },
+				{ key = "r", desc = "Rename branch" },
+				{ key = "s", desc = "Submit branch" },
+			},
+		},
+		{
+			title = "Commit Operations",
+			key = "c",
+			items = {
+				{ key = "c", desc = "Create commit" },
+				{ key = "a", desc = "Amend commit" },
+			},
+		},
+		{
+			title = "Stack Operations",
+			key = "s",
+			items = {
+				{ key = "r", desc = "Restack" },
+				{ key = "s", desc = "Submit stack" },
+				{ key = "t", desc = "Test stack" },
+			},
+		},
+		{
+			title = "Other Commands",
+			key = "o",
+			items = {
+				{ key = "l", desc = "Log" },
+				{ key = "a", desc = "Auth" },
+				{ key = "d", desc = "Dash" },
+				{ key = "f", desc = "Feedback" },
+			},
+		},
 	}
 
-	api.nvim_buf_set_lines(buf, 0, -1, false, content)
+	for _, section in ipairs(sections) do
+		add_line(string.format("  [%s] %s", section.key, section.title))
+		for _, item in ipairs(section.items) do
+			add_line(string.format("    %s: %s", item.key, item.desc))
+		end
+		add_line("")
+	end
 
+	add_line("Press q to quit")
+
+	-- Set up keymaps
 	local function set_keymap(key, command)
 		api.nvim_buf_set_keymap(buf, "n", key, command, { noremap = true, silent = true })
 	end
 
-	set_keymap("a", ":GraphiteAuth<CR>")
+	set_keymap("q", ":q<CR>")
 	set_keymap("b", ':lua require("graphite.ui.dashboard").show_branch_menu()<CR>')
 	set_keymap("c", ':lua require("graphite.ui.dashboard").show_commit_menu()<CR>')
-	set_keymap("d", ':lua require("graphite.ui.dashboard").show_downstack_menu()<CR>')
-	set_keymap("l", ":GraphiteLog<CR>")
-	set_keymap("r", ':lua require("graphite.ui.dashboard").show_repo_menu()<CR>')
 	set_keymap("s", ':lua require("graphite.ui.dashboard").show_stack_menu()<CR>')
-	set_keymap("u", ':lua require("graphite.ui.dashboard").show_upstack_menu()<CR>')
-	set_keymap("q", ":q<CR>")
+	set_keymap("o", ':lua require("graphite.ui.dashboard").show_other_menu()<CR>')
 
+	-- Set buffer options
+	api.nvim_buf_set_option(buf, "modifiable", false)
 	api.nvim_win_set_option(win, "cursorline", true)
 end
 
+-- Existing menu functions remain the same
 function M.show_branch_menu()
 	local menu_items = {
 		"1. Create branch",
@@ -118,56 +184,6 @@ function M.show_commit_menu()
 	end
 end
 
-function M.show_downstack_menu()
-	local menu_items = {
-		"1. Edit downstack",
-		"2. Get downstack",
-		"3. Restack downstack",
-		"4. Submit downstack",
-		"5. Test downstack",
-		"6. Track downstack",
-	}
-
-	local choice = vim.fn.inputlist(menu_items)
-	local commands = {
-		"GraphiteDownstackEdit",
-		"GraphiteDownstackGet",
-		"GraphiteDownstackRestack",
-		"GraphiteDownstackSubmit",
-		"GraphiteDownstackTest",
-		"GraphiteDownstackTrack",
-	}
-
-	if choice > 0 and choice <= #commands then
-		vim.cmd(commands[choice])
-	end
-end
-
-function M.show_repo_menu()
-	local menu_items = {
-		"1. Init repo",
-		"2. Set repo name",
-		"3. Set repo owner",
-		"4. Set PR templates",
-		"5. Set remote",
-		"6. Sync repo",
-	}
-
-	local choice = vim.fn.inputlist(menu_items)
-	local commands = {
-		"GraphiteRepoInit",
-		"GraphiteRepoName",
-		"GraphiteRepoOwner",
-		"GraphiteRepoPRTemplates",
-		"GraphiteRepoRemote",
-		"GraphiteRepoSync",
-	}
-
-	if choice > 0 and choice <= #commands then
-		vim.cmd(commands[choice])
-	end
-end
-
 function M.show_stack_menu()
 	local menu_items = {
 		"1. Restack",
@@ -187,20 +203,20 @@ function M.show_stack_menu()
 	end
 end
 
-function M.show_upstack_menu()
+function M.show_other_menu()
 	local menu_items = {
-		"1. Onto",
-		"2. Restack upstack",
-		"3. Submit upstack",
-		"4. Test upstack",
+		"1. Log",
+		"2. Auth",
+		"3. Dash",
+		"4. Feedback",
 	}
 
 	local choice = vim.fn.inputlist(menu_items)
 	local commands = {
-		"GraphiteUpstackOnto",
-		"GraphiteUpstackRestack",
-		"GraphiteUpstackSubmit",
-		"GraphiteUpstackTest",
+		"GraphiteLog",
+		"GraphiteAuth",
+		"GraphiteDash",
+		"GraphiteFeedback",
 	}
 
 	if choice > 0 and choice <= #commands then
