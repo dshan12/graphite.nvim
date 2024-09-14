@@ -170,19 +170,19 @@ end
 
 -- Helper functions to get data from Graphite
 function M.get_branches()
-	return utils.execute_command("branch list")
+	return utils.execute_command("branch list") or {}
 end
 
 function M.get_commits()
-	return utils.execute_command("log --limit 10")
+	return utils.execute_command("log --limit 10") or {}
 end
 
 function M.get_status()
-	return utils.execute_command("status")
+	return utils.execute_command("status") or {}
 end
 
 function M.get_diff()
-	return utils.execute_command("diff")
+	return utils.execute_command("diff") or {}
 end
 
 return M
