@@ -1,197 +1,189 @@
 local api = vim.api
 local M = {}
 
-local function create_win(width, height, row, col)
+-- Helper function to create a new window
+local function create_win(width, height, row, col, title)
 	local buf = api.nvim_create_buf(false, true)
-	local win = api.nvim_open_win(buf, true, {
+	local win = api.nvim_open_win(buf, false, {
 		style = "minimal",
 		relative = "editor",
 		width = width,
 		height = height,
 		row = row,
 		col = col,
+		border = "single",
 	})
+	api.nvim_buf_set_option(buf, "modifiable", true)
+	api.nvim_buf_set_lines(buf, 0, -1, false, { title, string.rep("─", width - 2) })
+	api.nvim_buf_set_option(buf, "modifiable", false)
 	return buf, win
 end
 
-local function set_lines(buf, lines)
+-- Helper function to set content in a buffer
+local function set_buf_content(buf, content)
 	api.nvim_buf_set_option(buf, "modifiable", true)
-	api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+	api.nvim_buf_set_lines(buf, 2, -1, false, content)
 	api.nvim_buf_set_option(buf, "modifiable", false)
-end
-
-local function set_keymap(buf, key, command)
-	api.nvim_buf_set_keymap(buf, "n", key, command, { noremap = true, silent = true })
 end
 
 function M.create_dashboard()
 	local width = api.nvim_get_option("columns")
 	local height = api.nvim_get_option("lines")
 
-	-- Create main window
-	local main_buf, main_win = create_win(width, height, 0, 0)
+	-- Create main container
+	local main_buf, main_win = create_win(width, height, 0, 0, "Graphite")
 
-	-- Create left panel (30% width)
-	local left_width = math.floor(width * 0.3)
-	local left_buf, left_win = create_win(left_width, height, 0, 0)
+	-- Create sub-windows
+	local half_width = math.floor(width / 2)
+	local half_height = math.floor(height / 2)
 
-	-- Create right panel (70% width)
-	local right_width = width - left_width
-	local right_buf, right_win = create_win(right_width, height, 0, left_width)
-
-	-- Populate left panel
-	local left_content = {
-		"Graphite Dashboard",
-		"",
-		"Branches:",
-		"  * main",
-		"    feature/new-dashboard",
-		"    bugfix/issue-123",
-		"",
-		"Commands:",
-		"  b - Branch operations",
-		"  c - Commit operations",
-		"  s - Stack operations",
-		"  l - Log",
-		"  q - Quit",
-	}
-	set_lines(left_buf, left_content)
-
-	-- Populate right panel (example content)
-	local right_content = {
-		"Current Branch: main",
-		"",
-		"Recent Commits:",
-		"  abc1234 Update dashboard layout",
-		"  def5678 Fix bug in branch creation",
-		"  ghi9012 Implement new feature",
-		"",
-		"Status:",
-		"  2 files changed, 15 insertions(+), 5 deletions(-)",
-		"",
-		"Press 'r' to refresh",
-	}
-	set_lines(right_buf, right_content)
-
-	-- Set up keymaps
-	set_keymap(left_buf, "b", ':lua require("graphite.ui.dashboard").show_branch_menu()<CR>')
-	set_keymap(left_buf, "c", ':lua require("graphite.ui.dashboard").show_commit_menu()<CR>')
-	set_keymap(left_buf, "s", ':lua require("graphite.ui.dashboard").show_stack_menu()<CR>')
-	set_keymap(left_buf, "l", ":GraphiteLog<CR>")
-	set_keymap(left_buf, "q", ":qa<CR>")
-	set_keymap(right_buf, "r", ':lua require("graphite.ui.dashboard").refresh_right_panel()<CR>')
-
-	-- Set options
-	api.nvim_win_set_option(left_win, "cursorline", true)
-	api.nvim_win_set_option(right_win, "cursorline", true)
+	local branches_buf, branches_win = create_win(half_width, half_height - 1, 1, 0, "Branches")
+	local commits_buf, commits_win = create_win(half_width, half_height, half_height, 0, "Commits")
+	local files_buf, files_win = create_win(half_width, half_height - 1, 1, half_width, "Files")
+	local diff_buf, diff_win = create_win(half_width, half_height, half_height, half_width, "Diff")
 
 	-- Store buffers and windows for later use
-	M.main_buf, M.main_win = main_buf, main_win
-	M.left_buf, M.left_win = left_buf, left_win
-	M.right_buf, M.right_win = right_buf, right_win
+	M.buffers = {
+		main = main_buf,
+		branches = branches_buf,
+		commits = commits_buf,
+		files = files_buf,
+		diff = diff_buf,
+	}
+	M.windows = {
+		main = main_win,
+		branches = branches_win,
+		commits = commits_win,
+		files = files_win,
+		diff = diff_win,
+	}
+
+	-- Set up global keymaps
+	local function set_global_keymap(key, command)
+		api.nvim_set_keymap("n", key, command, { noremap = true, silent = true })
+	end
+
+	set_global_keymap("q", ':lua require("graphite.ui.dashboard").close_dashboard()<CR>')
+	set_global_keymap("<Tab>", ':lua require("graphite.ui.dashboard").next_window()<CR>')
+	set_global_keymap("<S-Tab>", ':lua require("graphite.ui.dashboard").prev_window()<CR>')
+
+	-- Set up pane-specific keymaps
+	M.setup_branch_keymaps(branches_buf)
+	M.setup_commit_keymaps(commits_buf)
+	M.setup_file_keymaps(files_buf)
+	M.setup_diff_keymaps(diff_buf)
+
+	-- Initial content population
+	M.refresh_dashboard()
 end
 
-function M.refresh_right_panel()
-	-- This function should update the content of the right panel
-	-- You can call Graphite commands here and update the panel with the results
-	local content = {
-		"Current Branch: feature/new-dashboard",
-		"",
-		"Recent Commits:",
-		"  jkl3456 Implement dashboard refresh",
-		"  abc1234 Update dashboard layout",
-		"  def5678 Fix bug in branch creation",
-		"",
-		"Status:",
-		"  1 file changed, 50 insertions(+), 10 deletions(-)",
-		"",
-		"Press 'r' to refresh",
-	}
-	set_lines(M.right_buf, content)
+function M.setup_branch_keymaps(buf)
+	local function set_keymap(key, command)
+		api.nvim_buf_set_keymap(buf, "n", key, command, { noremap = true, silent = true })
+	end
+
+	set_keymap("c", ':lua require("graphite.commands.branch").create()<CR>')
+	set_keymap("d", ':lua require("graphite.commands.branch").delete()<CR>')
+	set_keymap("r", ':lua require("graphite.commands.branch").rename()<CR>')
+	set_keymap("s", ':lua require("graphite.commands.branch").submit()<CR>')
+	-- Add more branch-related keymaps as needed
 end
 
-function M.show_branch_menu()
-	local menu_items = {
-		"1. Create branch",
-		"2. Checkout branch",
-		"3. Branch up",
-		"4. Branch down",
-		"5. Branch top",
-		"6. Branch bottom",
-		"7. Branch info",
-		"8. Delete branch",
-		"9. Rename branch",
-		"10. Restack branch",
-		"11. Split branch",
-		"12. Squash branch",
-		"13. Submit branch",
-		"14. Track branch",
-		"15. Untrack branch",
-		"16. Unbranch",
-	}
+function M.setup_commit_keymaps(buf)
+	local function set_keymap(key, command)
+		api.nvim_buf_set_keymap(buf, "n", key, command, { noremap = true, silent = true })
+	end
 
-	local choice = vim.fn.inputlist(menu_items)
-	local commands = {
-		"GraphiteBranchCreate",
-		"GraphiteBranchCheckout",
-		"GraphiteBranchUp",
-		"GraphiteBranchDown",
-		"GraphiteBranchTop",
-		"GraphiteBranchBottom",
-		"GraphiteBranchInfo",
-		"GraphiteBranchDelete",
-		"GraphiteBranchRename",
-		"GraphiteBranchRestack",
-		"GraphiteBranchSplit",
-		"GraphiteBranchSquash",
-		"GraphiteBranchSubmit",
-		"GraphiteBranchTrack",
-		"GraphiteBranchUntrack",
-		"GraphiteBranchUnbranch",
-	}
+	set_keymap("c", ':lua require("graphite.commands.commit").create()<CR>')
+	set_keymap("a", ':lua require("graphite.commands.commit").amend()<CR>')
+	-- Add more commit-related keymaps as needed
+end
 
-	if choice > 0 and choice <= #commands then
-		vim.cmd(commands[choice])
-		M.refresh_right_panel()
+function M.setup_file_keymaps(buf)
+	local function set_keymap(key, command)
+		api.nvim_buf_set_keymap(buf, "n", key, command, { noremap = true, silent = true })
+	end
+
+	set_keymap("a", ':lua require("graphite.commands.file").add()<CR>')
+	set_keymap("r", ':lua require("graphite.commands.file").reset()<CR>')
+	-- Add more file-related keymaps as needed
+end
+
+function M.setup_diff_keymaps(buf)
+	local function set_keymap(key, command)
+		api.nvim_buf_set_keymap(buf, "n", key, command, { noremap = true, silent = true })
+	end
+
+	set_keymap("s", ':lua require("graphite.commands.diff").stage_hunk()<CR>')
+	set_keymap("u", ':lua require("graphite.commands.diff").unstage_hunk()<CR>')
+	-- Add more diff-related keymaps as needed
+end
+
+function M.refresh_dashboard()
+	-- Populate branches
+	local branches = M.get_branches()
+	set_buf_content(M.buffers.branches, branches)
+
+	-- Populate commits
+	local commits = M.get_commits()
+	set_buf_content(M.buffers.commits, commits)
+
+	-- Populate files
+	local files = M.get_files()
+	set_buf_content(M.buffers.files, files)
+
+	-- Populate diff
+	local diff = M.get_diff()
+	set_buf_content(M.buffers.diff, diff)
+end
+
+function M.close_dashboard()
+	for _, win in pairs(M.windows) do
+		api.nvim_win_close(win, true)
 	end
 end
 
-function M.show_commit_menu()
-	local menu_items = {
-		"1. Create commit",
-		"2. Amend commit",
-	}
-
-	local choice = vim.fn.inputlist(menu_items)
-	local commands = {
-		"GraphiteCommitCreate",
-		"GraphiteCommitAmend",
-	}
-
-	if choice > 0 and choice <= #commands then
-		vim.cmd(commands[choice])
-		M.refresh_right_panel()
+function M.next_window()
+	local current_win = api.nvim_get_current_win()
+	local windows = vim.tbl_values(M.windows)
+	for i, win in ipairs(windows) do
+		if win == current_win then
+			api.nvim_set_current_win(windows[(i % #windows) + 1])
+			return
+		end
 	end
 end
 
-function M.show_stack_menu()
-	local menu_items = {
-		"1. Restack",
-		"2. Submit stack",
-		"3. Test stack",
-	}
-
-	local choice = vim.fn.inputlist(menu_items)
-	local commands = {
-		"GraphiteStackRestack",
-		"GraphiteStackSubmit",
-		"GraphiteStackTest",
-	}
-
-	if choice > 0 and choice <= #commands then
-		vim.cmd(commands[choice])
-		M.refresh_right_panel()
+function M.prev_window()
+	local current_win = api.nvim_get_current_win()
+	local windows = vim.tbl_values(M.windows)
+	for i, win in ipairs(windows) do
+		if win == current_win then
+			api.nvim_set_current_win(windows[((i - 2) % #windows) + 1])
+			return
+		end
 	end
+end
+
+-- Helper functions to get data from Graphite
+function M.get_branches()
+	local output = vim.fn.system(vim.g.graphite_executable .. " branch list")
+	return vim.split(output, "\n")
+end
+
+function M.get_commits()
+	local output = vim.fn.system(vim.g.graphite_executable .. " log --limit 10")
+	return vim.split(output, "\n")
+end
+
+function M.get_files()
+	local output = vim.fn.system(vim.g.graphite_executable .. " status")
+	return vim.split(output, "\n")
+end
+
+function M.get_diff()
+	local output = vim.fn.system(vim.g.graphite_executable .. " diff")
+	return vim.split(output, "\n")
 end
 
 return M
