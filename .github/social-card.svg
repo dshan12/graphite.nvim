@@ -1,0 +1,26 @@
+<svg width="1280" height="640" viewBox="0 0 1280 640" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1280" height="640" fill="#1a1b2e"/>
+  <rect x="0" y="0" width="1280" height="6" fill="#7c3aed"/>
+  <text x="80" y="200" font-family="monospace, sans-serif" font-size="72" font-weight="bold" fill="#ffffff">
+    graphite.nvim
+  </text>
+  <text x="82" y="262" font-family="monospace, sans-serif" font-size="28" fill="#a78bfa">
+    Stack in place.
+  </text>
+  <text x="80" y="330" font-family="sans-serif" font-size="22" fill="#94a3b8">
+    A Neovim plugin for the Graphite CLI
+  </text>
+  <rect x="80" y="380" width="200" height="50" rx="25" fill="#7c3aed"/>
+  <text x="180" y="412" font-family="sans-serif" font-size="18" fill="#ffffff" text-anchor="middle">
+    :GraphiteDashboard
+  </text>
+  <text x="80" y="490" font-family="monospace" font-size="18" fill="#64748b">
+    Dashboard . Commits . Diff . Stack . Submit
+  </text>
+  <text x="80" y="530" font-family="monospace" font-size="16" fill="#475569">
+    lua / neovim-plugin / graphite / git-workflow
+  </text>
+  <text x="1260" y="600" font-family="sans-serif" font-size="16" fill="#475569" text-anchor="end">
+    MIT
+  </text>
+</svg>
